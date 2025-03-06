@@ -154,8 +154,8 @@ fn create_tz_table(lua: &Lua) -> Result<Table> {
 }
 
 const RFC_2822: &str = "%a, %d %b %Y %H:%M:%S %Z";
-const RFC_3339: &str = "%Y-%m-%dT%H:%M:%S%:z";
-const DEFAULT_FORMATS: &[&str] = &["%a, %d %b %Y %H:%M:%S%.f %Z", "%Y-%m-%dT%H:%M:%S%.f%:z"];
+const RFC_3339: &str = "%Y-%m-%dT%H:%M:%S%#z";
+const DEFAULT_FORMATS: &[&str] = &["%a, %d %b %Y %H:%M:%S%.f %Z", "%Y-%m-%dT%H:%M:%S%.f%#z"];
 
 fn parse_format<'a>(value: &'a Option<LuaString>) -> Result<&'a str> {
     match value {
