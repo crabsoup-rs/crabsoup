@@ -21,5 +21,5 @@ mlua = { version = "0.9", features = ["luau-jit", "serialize"] }
 
 # Internal dependencies
 crabsoup-kuchikiki = { version = "0.8.2-crabsoup", path = "crabsoup-kuchikiki" }
-crabsoup-luau-sys = { version = "0.1.0", path = "crabsoup-luau-sys" }
-crabsoup-mlua-analyze = { version = "0.1.0", path = "crabsoup-mlua-analyze" }
+crabsoup-luau-sys = { version = "0.1.1", path = "crabsoup-luau-sys" }
+crabsoup-mlua-analyze = { version = "0.1.1", path = "crabsoup-mlua-analyze" }

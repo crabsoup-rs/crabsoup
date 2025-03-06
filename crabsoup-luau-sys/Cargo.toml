@@ -1,6 +1,6 @@
 [package]
 name = "crabsoup-luau-sys"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Lymia Kanokawa <lymia@lymia.moe>"]
 edition = "2021"
 
@@ -11,7 +11,10 @@ include = [
     "luau/Analysis",
     "luau/Ast/include",
     "luau/Common/include",
+    "luau/Compiler/include",
     "luau/Config",
+    "luau/EqSat",
+    "luau/VM/include",
     "src",
     "build.rs",
     "Cargo.toml",
@@ -22,8 +25,8 @@ include = [
 license = "Apache-2.0"
 
 [dependencies]
-mlua-sys = { version = "=0.6.2  ", features = ["luau", "luau-codegen", "vendored"] }
-luau0-src = "=0.10.2" # pin luau version
+mlua-sys = { version = "=0.6.7", features = ["luau", "luau-codegen", "vendored"] }
+luau0-src = "=0.12.3" # pin luau version
 
 [build-dependencies]
 cc = { version = "1.1", features = ["parallel"] }

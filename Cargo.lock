@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "crabsoup-luau-sys"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cc",
  "luau0-src",
@@ -469,7 +469,7 @@ dependencies = [
 
 [[package]]
 name = "crabsoup-mlua-analyze"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cc",
  "crabsoup-luau-sys",
@@ -971,9 +971,9 @@ dependencies = [
 
 [[package]]
 name = "luau0-src"
-version = "0.10.2+luau635"
+version = "0.12.3+luau663"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8bd6bc70c84fdd4e89b71b528f7ab7db7b97adf759faa8dbe15c5011468e290"
+checksum = "76ae337c644bbf86a8d8e9ce3ee023311833d41741baf5e51acc31b37843aba1"
 dependencies = [
  "cc",
 ]
@@ -1077,9 +1077,9 @@ dependencies = [
 
 [[package]]
 name = "mlua-sys"
-version = "0.6.2"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ab7a5b4756b8177a2dfa8e0bbcde63bd4000afbc4ab20cbb68d114a25470f29"
+checksum = "1901c1a635a22fe9250ffcc4fcc937c16b47c2e9e71adba8784af8bca1f69594"
 dependencies = [
  "cc",
  "cfg-if",
