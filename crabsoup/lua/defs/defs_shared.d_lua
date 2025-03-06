@@ -30,7 +30,7 @@ declare Date: {
     now_format: (format: string?, tz: (Timezone | string)?) -> string,
     format: (time: number, format: string?, tz: (Timezone | string)?) -> string,
     to_timestamp: (time: string, format: (string | {string})?, tz: (Timezone | string)?) -> number,
-    reformat: (time: string, from_format: (string | {string})?, to_format: string?, tz: (Timezone | string)?) -> number,
+    reformat: (time: string, from_format: (string | {string})?, to_format: string?, tz: (Timezone | string)?) -> string,
 }
 declare Digest: {
     md5: (string) -> string,

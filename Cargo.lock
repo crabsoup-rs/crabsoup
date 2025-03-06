@@ -409,7 +409,7 @@ dependencies = [
 
 [[package]]
 name = "crabsoup"
-version = "0.1.0-alpha4"
+version = "0.1.0-alpha5"
 dependencies = [
  "anyhow",
  "base64",
