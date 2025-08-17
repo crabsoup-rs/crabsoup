@@ -164,7 +164,9 @@ fn parse_format<'a>(value: &'a Option<LuaString>) -> Result<&'a str> {
     }
 }
 fn parse_date(date: &str, format: &str, tz: LuaTimezone) -> Result<DateTime<LuaTimezone>> {
-    if let Ok(naive) = NaiveDateTime::parse_from_str(date, format) {
+    if let Ok(date_time) = DateTime::parse_from_str(date, format) {
+        Ok(date_time.with_timezone(&tz))
+    } else if let Ok(naive) = NaiveDateTime::parse_from_str(date, format) {
         decode_mapped_time(naive.and_local_timezone(tz))
     } else if let Ok(naive) = NaiveDate::parse_from_str(date, format) {
         let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
