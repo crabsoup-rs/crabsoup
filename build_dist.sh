@@ -1,10 +1,6 @@
 #!/bin/sh -eu
 
 if which zig; then
-    if [ "$(zig version)" != "0.11.0" ]; then
-        echo "Zig version must be 0.11.0"
-        exit 1
-    fi
     true
 else
     if which nix-shell; then
@@ -18,7 +14,7 @@ else
 fi
 
 BIN_NAME="crabsoup"
-VERSION="0.1.0-alpha5"
+VERSION="0.1.0-alpha6"
 
 export CC="clang"
 export CFLAGS="-Os"
