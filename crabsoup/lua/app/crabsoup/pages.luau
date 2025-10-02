@@ -121,8 +121,12 @@ function module.process_page(config, source_path, target_path)
         HTML.prepend(globals.page, HTML.clone(config.doctype))
     end
 
-    -- Return and pretty print the page
-    return HTML.pretty_print(globals.page)
+    -- Return and format the page
+    if config.settings.pretty_print_html then
+        return HTML.pretty_print(globals.page)
+    else
+        return HTML.to_string(globals.page)
+    end
 end
 
 return module
