@@ -18,8 +18,8 @@ binary = ["clap"]
 [dependencies]
 base64 = "0.22.1"
 chrono = "0.4"
-chrono-tz = { version = "0.9", features = ["case-insensitive"] }
-codespan-reporting = "0.11"
+chrono-tz = { version = "0.10", features = ["case-insensitive"] }
+codespan-reporting = "0.13"
 clap = { version = "4.5", features = ["derive"], optional = true }
 encoding_rs = { version = "0.8.34", features = ["fast-legacy-encode"] }
 html-escape = "0.2.13"
@@ -28,13 +28,13 @@ minijinja = "2.1"
 num_cpus = "1.16"
 parking_lot = "0.12"
 regex = "1.10"
-rustyline = { version = "14.0", default-features = false }
+rustyline = { version = "17.0", default-features = false }
 tokio = { version = "1.39", features = ["io-util", "process", "rt", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-typed-path = "0.9.1"
+typed-path = "0.12.0"
 urlencoding = "2.1.3"
-wyrand = { version = "0.2", features = ["wyhash"] }
+wyrand = { version = "0.3", features = ["wyhash"] }
 
 # Codecs
 csv = "1.3"

@@ -18,7 +18,7 @@ pub fn lstr_to_system_path(path: LuaString) -> Result<PathBuf> {
     if native.is_absolute() {
         Err(Error::runtime("Absolute paths are not allowed in crabsoup."))
     } else {
-        Ok(native.into())
+        Ok((&native).into())
     }
 }
 

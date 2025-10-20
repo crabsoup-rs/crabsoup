@@ -7,12 +7,12 @@ use mlua::{
 };
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
-use std::fmt::Write;
+use std::{fmt::Write, ops::Deref};
 
 fn digest_helper<D: Digest>(lua: &Lua) -> Result<LuaFunction> {
     Ok(lua.create_function(|_, input: LuaString| {
         let mut str = String::new();
-        for byte in D::digest(input.as_bytes()).as_slice() {
+        for byte in D::digest(input.as_bytes()).deref() {
             write!(str, "{:02x}", *byte).unwrap();
         }
         Ok(str)

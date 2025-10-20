@@ -69,7 +69,7 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
                         .with_message(&value.message)
                         .with_labels(vec![Label::primary(file_id, start_idx..end_idx)]);
 
-                    term::emit(&mut writer.lock(), &config, &files, &diagnostic)
+                    term::emit_to_write_style(&mut writer.lock(), &config, &files, &diagnostic)
                         .map_err(Error::runtime)?;
                 }
                 Ok(!result.iter().any(|x| x.is_error))
