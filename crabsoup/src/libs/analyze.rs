@@ -82,11 +82,11 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
 
 struct AnalyzerSetup(LuaAnalyzerBuilder);
 impl UserData for AnalyzerSetup {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "AnalyzerSetup");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
             "add_definitions",
             |_, this, (name, source): (LuaString, LuaString)| {
@@ -112,7 +112,7 @@ impl UserData for AnalyzerSetup {
 
 struct Analyzer(LuaAnalyzer);
 impl UserData for Analyzer {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "Analyzer");
     }
 }

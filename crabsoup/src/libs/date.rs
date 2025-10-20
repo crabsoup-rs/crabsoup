@@ -43,11 +43,11 @@ impl LuaTimezone {
     }
 }
 impl UserData for LuaTimezone {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "Timezone");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_meta_method("__tostring", |_, this, ()| Ok(this.name()));
     }
 }

@@ -693,7 +693,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
 #[derive(Clone, Debug)]
 struct LuaNodeRef(NodeRef);
 impl UserData for LuaNodeRef {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "NodeRef");
     }
 }

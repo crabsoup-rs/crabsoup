@@ -290,7 +290,7 @@ impl LuaCompletedProcess {
     }
 }
 impl UserData for LuaCompletedProcess {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "CompletedProcess");
     }
 }

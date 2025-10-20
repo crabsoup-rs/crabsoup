@@ -254,11 +254,11 @@ enum PluginInstruction {
     Exit(String),
 }
 impl UserData for PluginInstruction {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "PluginInstruction");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("get_message", |lua, this, ()| match this {
             PluginInstruction::Fail(msg) => Ok(lua.create_string(msg)),
             PluginInstruction::Exit(msg) => Ok(lua.create_string(msg)),
@@ -279,11 +279,11 @@ struct RustyLineEditor {
     editor: DefaultEditor,
 }
 impl UserData for RustyLineEditor {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "RustyLineEditor");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("readline", |_, this, prompt: LuaString| {
             match this.editor.readline(&prompt.to_str()?) {
                 Ok(line) => Ok(Some(line)),
@@ -304,21 +304,21 @@ impl UserData for RustyLineEditor {
 
 struct OpaqueEnvironment(());
 impl UserData for OpaqueEnvironment {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "Environment");
     }
 }
 
 struct CompiledChunk(Vec<u8>);
 impl UserData for CompiledChunk {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "CompiledChunk");
     }
 }
 
 pub struct OpaqueKey(());
 impl UserData for OpaqueKey {
-    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "OpaqueKey");
     }
 }
