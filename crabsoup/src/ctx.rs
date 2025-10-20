@@ -26,8 +26,7 @@ impl CrabsoupLuaContext {
     pub fn new() -> Result<Self> {
         set_fflags();
 
-        let libs = StdLib::ALL ^ StdLib::PACKAGE;
-        let lua = Lua::new_with(libs, LuaOptions::new())?;
+        let lua = Lua::new_with(StdLib::ALL, LuaOptions::new())?;
 
         // setup operating environment
         {
@@ -59,7 +58,7 @@ impl CrabsoupLuaContext {
             lua.load(*sources.get("init.luau").unwrap())
                 .set_name("@<rt>/init.luau")
                 .set_mode(ChunkMode::Binary)
-                .call::<_, ()>((&shared_table, &lua.globals()))?;
+                .call::<()>((&shared_table, &lua.globals()))?;
         }
 
         // finish initialization
@@ -67,27 +66,27 @@ impl CrabsoupLuaContext {
         Ok(CrabsoupLuaContext { lua })
     }
 
-    pub fn run_standalone(&self, code: &str, chunk_name: Option<&str>) -> Result<Thread<'_>> {
+    pub fn run_standalone(&self, code: &str, chunk_name: Option<&str>) -> Result<Thread> {
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
         let thread = shared_table
-            .get::<_, LuaFunction>("run_standalone")?
-            .call::<_, Thread>((code, chunk_name))?;
+            .get::<LuaFunction>("run_standalone")?
+            .call::<Thread>((code, chunk_name))?;
         Ok(thread)
     }
 
     pub fn repl(&self) -> Result<()> {
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
         shared_table
-            .get::<_, LuaFunction>("run_repl_from_console")?
-            .call::<_, ()>(())?;
+            .get::<LuaFunction>("run_repl_from_console")?
+            .call::<()>(())?;
         Ok(())
     }
 
     pub fn repl_in_plugin_env(&self) -> Result<()> {
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
         shared_table
-            .get::<_, LuaFunction>("run_repl_from_console_plugin")?
-            .call::<_, ()>(())?;
+            .get::<LuaFunction>("run_repl_from_console_plugin")?
+            .call::<()>(())?;
         Ok(())
     }
 
@@ -100,8 +99,8 @@ impl CrabsoupLuaContext {
         let value = self.lua.to_value_with(&args, options)?;
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
         shared_table
-            .get::<_, LuaFunction>("run_main")?
-            .call::<_, ()>(value)?;
+            .get::<LuaFunction>("run_main")?
+            .call::<()>(value)?;
         Ok(())
     }
 }

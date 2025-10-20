@@ -11,7 +11,7 @@ fn compile_script(input: &[u8], has_require: bool) -> Vec<u8> {
         compiler =
             compiler.set_mutable_globals(vec!["require".to_string(), "require_env".to_string()]);
     }
-    compiler.compile(input)
+    compiler.compile(input).unwrap()
 }
 
 pub fn main() -> Result<()> {

@@ -23,13 +23,13 @@ static ASYNC_EXECUTOR: LazyLock<Runtime> = LazyLock::new(|| {
         .unwrap()
 });
 
-enum CommandSource<'a> {
-    ShellCommand(LuaString<'a>),
-    TableArgs(Vec<LuaString<'a>>),
+enum CommandSource {
+    ShellCommand(LuaString),
+    TableArgs(Vec<LuaString>),
 }
 
 fn parse_command_value(data: &Table) -> Result<CommandInfo> {
-    let shell_command = if let Some(str) = data.raw_get::<_, Option<LuaString>>("shell")? {
+    let shell_command = if let Some(str) = data.raw_get::<Option<LuaString>>("shell")? {
         CommandSource::ShellCommand(str)
     } else {
         let len = data.raw_len();
@@ -48,7 +48,7 @@ fn parse_command_value(data: &Table) -> Result<CommandInfo> {
         #[cfg(unix)]
         CommandSource::ShellCommand(cmd) => {
             let mut command = Command::new("sh");
-            command.args(["-c", cmd.to_str()?]);
+            command.args(["-c", &cmd.to_str()?]);
             command
         }
 
@@ -66,9 +66,9 @@ fn parse_command_value(data: &Table) -> Result<CommandInfo> {
 
         CommandSource::TableArgs(args) => {
             assert_ne!(args.len(), 0);
-            let mut command = Command::new(args[0].to_str()?);
+            let mut command = Command::new(args[0].to_str()?.deref());
             for arg in args.into_iter().skip(1) {
-                command.arg(arg.to_str()?);
+                command.arg(arg.to_str()?.deref());
             }
             command
         }
@@ -76,27 +76,27 @@ fn parse_command_value(data: &Table) -> Result<CommandInfo> {
 
     let mut stdin = None;
 
-    if let Some(dir) = data.get::<_, Option<LuaString>>("current_directory")? {
-        command.current_dir(dir.to_str()?);
+    if let Some(dir) = data.get::<Option<LuaString>>("current_directory")? {
+        command.current_dir(dir.to_str()?.deref());
     }
-    if let Some(env) = data.get::<_, Option<Table>>("env")? {
+    if let Some(env) = data.get::<Option<Table>>("env")? {
         for t in env.pairs::<LuaString, LuaString>() {
             let (k, v) = t?;
-            command.env(k.to_str()?, v.to_str()?);
+            command.env(k.to_str()?.deref(), v.to_str()?.deref());
         }
     }
-    if let Some(dir) = data.get::<_, Option<LuaString>>("stdin")? {
+    if let Some(dir) = data.get::<Option<LuaString>>("stdin")? {
         command.stdin(Stdio::piped());
         stdin = Some(dir.to_str()?.to_string());
     } else {
         command.stdin(Stdio::null());
     }
-    if let Some(true) = data.get::<_, Option<bool>>("capture_stdout")? {
+    if let Some(true) = data.get::<Option<bool>>("capture_stdout")? {
         command.stdout(Stdio::piped());
     } else {
         command.stdout(Stdio::null());
     }
-    if let Some(true) = data.get::<_, Option<bool>>("capture_stderr")? {
+    if let Some(true) = data.get::<Option<bool>>("capture_stderr")? {
         command.stderr(Stdio::piped());
     } else {
         command.stderr(Stdio::inherit());
@@ -250,7 +250,7 @@ impl LuaProcess {
     }
 }
 impl UserData for LuaProcess {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "Process");
     }
 }
@@ -275,14 +275,14 @@ impl LuaCompletedProcess {
         }
     }
 
-    fn get_stdout<'lua>(&self, lua: &'lua Lua) -> Result<LuaString<'lua>> {
+    fn get_stdout(&self, lua: &Lua) -> Result<LuaString> {
         match &self.stdout_info {
             None => Err(Error::runtime("stdout is not captured")),
             Some(vec) => Ok(lua.create_string(vec.lock().unwrap().as_slice())?),
         }
     }
 
-    fn get_stderr<'lua>(&self, lua: &'lua Lua) -> Result<LuaString<'lua>> {
+    fn get_stderr(&self, lua: &Lua) -> Result<LuaString> {
         match &self.stderr_info {
             None => Err(Error::runtime("stderr is not captured")),
             Some(vec) => Ok(lua.create_string(vec.lock().unwrap().as_slice())?),
@@ -290,12 +290,12 @@ impl LuaCompletedProcess {
     }
 }
 impl UserData for LuaCompletedProcess {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "CompletedProcess");
     }
 }
 
-pub fn create_process_table(lua: &Lua) -> Result<Table<'_>> {
+pub fn create_process_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     // Simple API

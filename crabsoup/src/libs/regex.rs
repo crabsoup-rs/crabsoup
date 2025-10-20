@@ -1,23 +1,24 @@
 use mlua::{prelude::LuaString, Error, Lua, Result, Table};
+use std::ops::Deref;
 
-pub fn create_regex_table(lua: &Lua) -> Result<Table<'_>> {
+pub fn create_regex_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     table.raw_set(
         "match",
         lua.create_function(|_, (string, regex): (LuaString, LuaString)| {
-            Ok(regex::Regex::new(regex.to_str()?)
+            Ok(regex::Regex::new(&regex.to_str()?)
                 .map_err(Error::runtime)?
-                .is_match(string.to_str()?))
+                .is_match(&string.to_str()?))
         })?,
     )?;
     table.raw_set(
         "find_all",
         lua.create_function(|lua, (string, regex): (LuaString, LuaString)| {
             let table = lua.create_table()?;
-            for m in regex::Regex::new(regex.to_str()?)
+            for m in regex::Regex::new(&regex.to_str()?)
                 .map_err(Error::runtime)?
-                .find_iter(string.to_str()?)
+                .find_iter(&string.to_str()?)
             {
                 table.raw_push(m.as_str())?;
             }
@@ -29,9 +30,9 @@ pub fn create_regex_table(lua: &Lua) -> Result<Table<'_>> {
         lua.create_function(
             |lua, (string, regex, replacement): (LuaString, LuaString, LuaString)| {
                 Ok(lua.create_string(
-                    regex::Regex::new(regex.to_str()?)
+                    regex::Regex::new(&regex.to_str()?)
                         .map_err(Error::runtime)?
-                        .replace(string.to_str()?, replacement.to_str()?)
+                        .replace(&string.to_str()?, replacement.to_str()?.deref())
                         .as_bytes(),
                 )?)
             },
@@ -42,9 +43,9 @@ pub fn create_regex_table(lua: &Lua) -> Result<Table<'_>> {
         lua.create_function(
             |lua, (string, regex, replacement): (LuaString, LuaString, LuaString)| {
                 Ok(lua.create_string(
-                    regex::Regex::new(regex.to_str()?)
+                    regex::Regex::new(&regex.to_str()?)
                         .map_err(Error::runtime)?
-                        .replace_all(string.to_str()?, replacement.to_str()?)
+                        .replace_all(&string.to_str()?, replacement.to_str()?.deref())
                         .as_bytes(),
                 )?)
             },
@@ -54,9 +55,9 @@ pub fn create_regex_table(lua: &Lua) -> Result<Table<'_>> {
         "split",
         lua.create_function(|lua, (string, regex): (LuaString, LuaString)| {
             let table = lua.create_table()?;
-            for m in regex::Regex::new(regex.to_str()?)
+            for m in regex::Regex::new(&regex.to_str()?)
                 .map_err(Error::runtime)?
-                .split(string.to_str()?)
+                .split(string.to_str()?.deref())
             {
                 table.raw_push(m)?;
             }
@@ -65,7 +66,7 @@ pub fn create_regex_table(lua: &Lua) -> Result<Table<'_>> {
     )?;
     table.raw_set(
         "escape",
-        lua.create_function(|_, str: LuaString| Ok(regex::escape(str.to_str()?)))?,
+        lua.create_function(|_, str: LuaString| Ok(regex::escape(&str.to_str()?)))?,
     )?;
 
     Ok(table)

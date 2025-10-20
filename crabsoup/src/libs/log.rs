@@ -2,11 +2,11 @@ use mlua::{Lua, MultiValue, Result, Table, Value};
 use std::borrow::Cow;
 use tracing::{debug, enabled, error, info, trace, warn, Level};
 
-pub fn create_log_table(lua: &Lua) -> Result<Table<'_>> {
+pub fn create_log_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     fn target(lua: &Lua) -> Result<Cow<'static, str>> {
-        if let Some(debug) = lua.inspect_stack(1) {
+        if let Some(source) = lua.inspect_stack(1, |debug| {
             if let Some(source) = debug.source().source {
                 if source.starts_with("@") {
                     let source = source.strip_prefix("@").unwrap_or(&source);
@@ -21,6 +21,8 @@ pub fn create_log_table(lua: &Lua) -> Result<Table<'_>> {
             } else {
                 Ok(module_path!().into())
             }
+        }) {
+            source
         } else {
             Ok(module_path!().into())
         }
@@ -56,7 +58,7 @@ pub fn create_log_table(lua: &Lua) -> Result<Table<'_>> {
     create_log_function!("debug", debug, Level::DEBUG);
     create_log_function!("trace", trace, Level::TRACE);
 
-    table.raw_set("warning", table.raw_get::<_, Value>("warn")?)?;
+    table.raw_set("warning", table.raw_get::<Value>("warn")?)?;
 
     Ok(table)
 }

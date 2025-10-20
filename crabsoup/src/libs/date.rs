@@ -6,7 +6,10 @@ use chrono_tz::{Tz, TZ_VARIANTS};
 use mlua::{
     prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, Value,
 };
-use std::fmt::{Display, Formatter};
+use std::{
+    borrow::Cow,
+    fmt::{Display, Formatter},
+};
 
 const MICROS: f64 = 1000000.0;
 
@@ -40,11 +43,11 @@ impl LuaTimezone {
     }
 }
 impl UserData for LuaTimezone {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "Timezone");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_meta_method("__tostring", |_, this, ()| Ok(this.name()));
     }
 }
@@ -122,7 +125,7 @@ impl Display for LuaTzOffset {
 fn value_as_timezone(value: Value) -> Result<LuaTimezone> {
     match value {
         Value::Nil => Ok(LuaTimezone::Tz(Tz::UTC)),
-        Value::String(name) => Ok(LuaTimezone::from_str(name.to_str()?)?),
+        Value::String(name) => Ok(LuaTimezone::from_str(&name.to_str()?)?),
         Value::UserData(ud) if ud.is::<LuaTimezone>() => Ok(*ud.borrow::<LuaTimezone>()?),
         _ => Err(Error::runtime(format_args!(
             "found: {}, expected: nil, string or Timezone",
@@ -131,20 +134,20 @@ fn value_as_timezone(value: Value) -> Result<LuaTimezone> {
     }
 }
 
-fn create_tz_table(lua: &Lua) -> Result<Table<'_>> {
+fn create_tz_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     let new_mt = lua.create_table()?;
     new_mt.set("__metatable", false)?;
     new_mt.set(
         "__index",
-        lua.create_function::<_, (), _>(|_, (_, name): (Value, LuaString)| {
+        lua.create_function::<_, _, ()>(|_, (_, name): (Value, LuaString)| {
             Err(Error::runtime(format_args!("Timezone not found: {:?}", name.to_str()?)))
         })?,
     )?;
     new_mt.set_readonly(true);
 
-    table.set_metatable(Some(new_mt.clone()));
+    table.set_metatable(Some(new_mt.clone()))?;
     table.raw_set("Local", LuaTimezone::Local(Local))?;
     for variant in TZ_VARIANTS {
         table.raw_set(variant.name(), LuaTimezone::Tz(variant))?;
@@ -157,10 +160,10 @@ const RFC_2822: &str = "%a, %d %b %Y %H:%M:%S %Z";
 const RFC_3339: &str = "%Y-%m-%dT%H:%M:%S%#z";
 const DEFAULT_FORMATS: &[&str] = &["%a, %d %b %Y %H:%M:%S%.f %Z", "%Y-%m-%dT%H:%M:%S%.f%#z"];
 
-fn parse_format<'a>(value: &'a Option<LuaString>) -> Result<&'a str> {
+fn parse_format(value: &Option<LuaString>) -> Result<Cow<'static, str>> {
     match value {
-        None => Ok(RFC_2822),
-        Some(str) => str.to_str(),
+        None => Ok(Cow::Borrowed(RFC_2822)),
+        Some(str) => Ok(Cow::Owned(str.to_str()?.to_string())),
     }
 }
 fn parse_date(date: &str, format: &str, tz: LuaTimezone) -> Result<DateTime<LuaTimezone>> {
@@ -185,7 +188,7 @@ fn parse_input_format(date: &str, value: &Value, tz: LuaTimezone) -> Result<f64>
         }
         Err(Error::runtime(format!("No formats matched date: {date}")))
     } else if let Some(value) = value.as_string() {
-        let value = parse_date(date, value.to_str()?, tz)?;
+        let value = parse_date(date, &value.to_str()?, tz)?;
         return Ok(value.timestamp_micros() as f64 / MICROS);
     } else if let Some(value) = value.as_table() {
         for v in value.clone().sequence_values::<Value>() {
@@ -200,7 +203,7 @@ fn parse_input_format(date: &str, value: &Value, tz: LuaTimezone) -> Result<f64>
     }
 }
 
-pub fn create_date_table(lua: &Lua) -> Result<Table<'_>> {
+pub fn create_date_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     table.raw_set("Timezone", create_tz_table(lua)?)?;
@@ -228,14 +231,14 @@ pub fn create_date_table(lua: &Lua) -> Result<Table<'_>> {
         lua.create_function(|_, (time, format, tz): (f64, Option<LuaString>, Value)| {
             let tz = value_as_timezone(tz)?;
             let time = decode_mapped_time(tz.timestamp_micros((time * MICROS) as i64))?;
-            Ok(time.format(parse_format(&format)?).to_string())
+            Ok(time.format(&parse_format(&format)?).to_string())
         })?,
     )?;
     table.raw_set(
         "to_timestamp",
         lua.create_function(|_, (str, format, tz): (LuaString, Value, Value)| {
             let tz = value_as_timezone(tz)?;
-            parse_input_format(str.to_str()?, &format, tz)
+            parse_input_format(&str.to_str()?, &format, tz)
         })?,
     )?;
 

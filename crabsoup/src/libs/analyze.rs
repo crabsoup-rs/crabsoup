@@ -11,7 +11,7 @@ use mlua::{
 };
 use tracing::{enabled, Level};
 
-pub fn create_analyze_table(lua: &Lua) -> Result<Table<'_>> {
+pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     table.raw_set(
@@ -19,7 +19,7 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table<'_>> {
         lua.create_function(|lua, setup_func: LuaFunction| {
             let builder = LuaAnalyzerBuilder::new();
             let userdata = lua.create_userdata(AnalyzerSetup(builder))?;
-            setup_func.call::<_, ()>(&userdata)?;
+            setup_func.call::<()>(&userdata)?;
             let builder = userdata.take::<AnalyzerSetup>()?;
             Ok(Analyzer(builder.0.build()))
         })?,
@@ -29,14 +29,14 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table<'_>> {
         lua.create_function(
             |_, (analyzer, name, sources): (UserDataRef<Analyzer>, LuaString, LuaString)| {
                 let location = name.to_str()?;
-                let location = location.strip_prefix("@").unwrap_or(location);
+                let location = location.strip_prefix("@").unwrap_or(&location);
 
                 let sources = sources.to_str()?;
 
                 let mut files = SimpleFiles::new();
-                let file_id = files.add(location, sources);
+                let file_id = files.add(location, &sources);
 
-                let result = analyzer.0.check(&location, sources, false);
+                let result = analyzer.0.check(&location, &sources, false);
 
                 let writer = StandardStream::stderr(ColorChoice::Always);
                 let config = term::Config::default();
@@ -82,15 +82,15 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table<'_>> {
 
 struct AnalyzerSetup(LuaAnalyzerBuilder);
 impl UserData for AnalyzerSetup {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "AnalyzerSetup");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
             "add_definitions",
             |_, this, (name, source): (LuaString, LuaString)| {
-                this.0.add_definitions(name.to_str()?, source.to_str()?);
+                this.0.add_definitions(&name.to_str()?, &source.to_str()?);
                 Ok(())
             },
         );
@@ -102,7 +102,8 @@ impl UserData for AnalyzerSetup {
                     None => None,
                     Some(s) => Some(s.to_str()?),
                 };
-                this.0.set_deprecation(path.to_str()?, replacement);
+                this.0
+                    .set_deprecation(&path.to_str()?, replacement.as_deref());
                 Ok(())
             },
         );
@@ -111,7 +112,7 @@ impl UserData for AnalyzerSetup {
 
 struct Analyzer(LuaAnalyzer);
 impl UserData for Analyzer {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "Analyzer");
     }
 }

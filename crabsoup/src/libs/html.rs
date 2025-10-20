@@ -12,14 +12,14 @@ use kuchikiki::{
     parse_fragment, parse_html, traits::TendrilSink, ElementData, NodeDataRef, NodeRef, Selectors,
 };
 use mlua::{prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataRef};
-use std::{borrow::Cow, cell::RefCell, io::Cursor, rc::Rc, str::Split};
+use std::{borrow::Cow, cell::RefCell, io::Cursor, ops::Deref, rc::Rc, str::Split};
 use tracing::warn;
 
 fn qual_name(name: &str) -> QualName {
     QualName { prefix: None, ns: ns!(html), local: LocalName::from(name) }
 }
 fn decode_encoding(encoding: &LuaString) -> Result<&'static Encoding> {
-    match Encoding::for_label(encoding.as_bytes()) {
+    match Encoding::for_label(&encoding.as_bytes()) {
         None => {
             Err(Error::runtime(format_args!("Unknown encoding: {}", encoding.to_string_lossy())))
         }
@@ -27,12 +27,14 @@ fn decode_encoding(encoding: &LuaString) -> Result<&'static Encoding> {
     }
 }
 fn encoding_warning(lua: &Lua, encoding: &'static Encoding, encode: bool) {
-    let location = if let Some(source) = lua.inspect_stack(1) {
-        source
+    let location = if let Some(source) = lua.inspect_stack(1, |debug| {
+        debug
             .source()
             .source
             .map(|x| x.to_string())
             .unwrap_or_else(|| "<unknown>".to_string())
+    }) {
+        source
     } else {
         "<unknown>".to_string()
     };
@@ -48,7 +50,7 @@ fn html_to_string<'lua>(
     encoding: &Option<LuaString>,
     active_encoding_ref: &Rc<RefCell<&'static Encoding>>,
     pretty_print: bool,
-) -> Result<LuaString<'lua>> {
+) -> Result<LuaString> {
     let encoding = match encoding {
         None => *active_encoding_ref.borrow(),
         Some(encoding) => decode_encoding(&encoding)?,
@@ -115,8 +117,8 @@ fn check_class_name(name: &str) -> Result<()> {
 
 fn parse<'lua>(
     lua: &'lua Lua,
-    text: LuaString<'lua>,
-    encoding: Option<LuaString<'lua>>,
+    text: LuaString,
+    encoding: Option<LuaString>,
     force_document: bool,
     force_fragment: bool,
     fragment_root: &str,
@@ -128,7 +130,8 @@ fn parse<'lua>(
         None => *active_encoding_ref.borrow(),
         Some(encoding) => decode_encoding(&encoding)?,
     };
-    let (text, encoding, errors) = encoding.decode(text.as_bytes());
+    let text = text.as_bytes();
+    let (text, encoding, errors) = encoding.decode(&text);
     if errors {
         encoding_warning(lua, encoding, false);
     }
@@ -145,7 +148,7 @@ fn parse<'lua>(
     }
 }
 
-pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
+pub fn create_html_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     let active_encoding = Rc::new(RefCell::new(UTF_8));
@@ -175,7 +178,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
             "parse_fragment",
             lua.create_function(
                 move |lua, (text, tag, encoding): (LuaString, LuaString, Option<LuaString>)| {
-                    parse(lua, text, encoding, false, true, tag.to_str()?, &active_encoding_ref)
+                    parse(lua, text, encoding, false, true, &tag.to_str()?, &active_encoding_ref)
                 },
             )?,
         )?;
@@ -248,9 +251,9 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
     table.raw_set(
         "create_element",
         lua.create_function(|_, (name, text): (LuaString, Option<LuaString>)| {
-            let elem = NodeRef::new_element(qual_name(name.to_str()?), vec![]);
+            let elem = NodeRef::new_element(qual_name(&name.to_str()?), vec![]);
             if let Some(text) = text {
-                elem.append(NodeRef::new_text(text.to_str()?));
+                elem.append(NodeRef::new_text(text.to_str()?.to_string()));
             }
             Ok(LuaNodeRef(elem))
         })?,
@@ -258,7 +261,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
     table.raw_set(
         "create_text",
         lua.create_function(|_, text: LuaString| {
-            Ok(LuaNodeRef(NodeRef::new_text(text.to_str()?)))
+            Ok(LuaNodeRef(NodeRef::new_text(text.to_str()?.to_string())))
         })?,
     )?;
     table.raw_set(
@@ -278,7 +281,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
         lua.create_function(|lua, (html, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
             let selector = selector.to_str()?;
             let table = lua.create_table()?;
-            for elem in html.0.select(selector).map_err(|()| {
+            for elem in html.0.select(&selector).map_err(|()| {
                 Error::runtime(format_args!("Could not parse selector: {selector}"))
             })? {
                 table.raw_push(LuaNodeRef(elem.as_node().clone()))?;
@@ -292,7 +295,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
             let selector = selector.to_str()?;
             Ok(html
                 .0
-                .select(selector)
+                .select(&selector)
                 .map_err(|()| Error::runtime(format_args!("Could not parse selector: {selector}")))?
                 .next()
                 .map(|x| LuaNodeRef(x.as_node().clone())))
@@ -302,7 +305,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
         "matches",
         lua.create_function(|_, (node, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
             let selector = selector.to_str()?;
-            let selectors = Selectors::compile(selector).map_err(|()| {
+            let selectors = Selectors::compile(&selector).map_err(|()| {
                 Error::runtime(format_args!("Could not parse selector: {selector}"))
             })?;
             if let Some(elem) = node.0.clone().into_element_ref() {
@@ -388,14 +391,18 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
     table.raw_set(
         "set_tag_name",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
-            element(&node.0)?.name.borrow_mut().local = LocalName::from(name.to_str()?);
+            element(&node.0)?.name.borrow_mut().local = LocalName::from(name.to_str()?.deref());
             Ok(())
         })?,
     )?;
     table.raw_set(
         "get_attribute",
         lua.create_function(|lua, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
-            if let Some(attr) = element(&node.0)?.attributes.borrow().get(name.to_str()?) {
+            if let Some(attr) = element(&node.0)?
+                .attributes
+                .borrow()
+                .get(name.to_str()?.deref())
+            {
                 Ok(Some(lua.create_string(attr)?))
             } else {
                 Ok(None)
@@ -409,7 +416,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
                 element(&node.0)?
                     .attributes
                     .borrow_mut()
-                    .insert(name.to_str()?, value.to_string_lossy().to_string());
+                    .insert(name.to_str()?.deref(), value.to_string_lossy().to_string());
                 Ok(())
             },
         )?,
@@ -420,7 +427,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
             element(&node.0)?
                 .attributes
                 .borrow_mut()
-                .remove(name.to_str()?);
+                .remove(name.to_str()?.deref());
             Ok(())
         })?,
     )?;
@@ -467,7 +474,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
             if let Some(classes) = classes {
                 let name = name.to_str()?;
                 check_class_name(&name)?;
-                Ok(split_classes(classes).any(|x| x == name))
+                Ok(split_classes(classes).any(|x| x == name.deref()))
             } else {
                 Ok(false)
             }
@@ -481,8 +488,8 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
             let classes = attrs.get("class");
             if let Some(classes) = classes {
                 let name = name.to_str()?;
-                check_class_name(name)?;
-                if !split_classes(classes).any(|x| x == name) {
+                check_class_name(&name)?;
+                if !split_classes(classes).any(|x| x == name.deref()) {
                     let new = format!("{classes} {name}");
                     attrs.insert("class", new);
                 }
@@ -502,9 +509,9 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
             let classes = attrs.get("class");
             if let Some(classes) = classes {
                 let name = name.to_str()?;
-                check_class_name(name)?;
+                check_class_name(&name)?;
                 let mut new = String::new();
-                for class in split_classes(classes).filter(|x| *x != name) {
+                for class in split_classes(classes).filter(|x| *x != name.deref()) {
                     if !new.is_empty() {
                         new.push(' ');
                     }
@@ -686,7 +693,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
 #[derive(Clone, Debug)]
 struct LuaNodeRef(NodeRef);
 impl UserData for LuaNodeRef {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "NodeRef");
     }
 }

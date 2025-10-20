@@ -1,5 +1,8 @@
-use mlua::{prelude::LuaString, Error, Lua, Result};
-use std::path::{Path, PathBuf};
+use mlua::{prelude::LuaString, BorrowedStr, Error, Lua, Result};
+use std::{
+    ops::Deref,
+    path::{Path, PathBuf},
+};
 use typed_path::{
     NativePath, Utf8NativeEncoding, Utf8NativePath, Utf8UnixEncoding, Utf8UnixPath, Utf8UnixPathBuf,
 };
@@ -9,7 +12,8 @@ type StandardPathBuf = Utf8UnixPathBuf;
 type StandardEncoding = Utf8UnixEncoding;
 
 pub fn lstr_to_system_path(path: LuaString) -> Result<PathBuf> {
-    let path = StandardPath::new(path.to_str()?);
+    let path = path.to_str()?;
+    let path = StandardPath::new(path.deref());
     let native = path.with_encoding::<Utf8NativeEncoding>();
     if native.is_absolute() {
         Err(Error::runtime("Absolute paths are not allowed in crabsoup."))
@@ -18,9 +22,8 @@ pub fn lstr_to_system_path(path: LuaString) -> Result<PathBuf> {
     }
 }
 
-pub fn lstr_to_path<'lua>(path: &'lua LuaString) -> Result<&'lua StandardPath> {
-    let str = path.to_str()?;
-    Ok(StandardPath::new(str))
+pub fn lstr_to_path<'a, 'b: 'a>(path: &'b BorrowedStr<'a>) -> Result<&'a StandardPath> {
+    Ok(StandardPath::new(path.deref()))
 }
 
 pub fn system_path_to_path(path: &Path) -> Result<StandardPathBuf> {
@@ -30,7 +33,7 @@ pub fn system_path_to_path(path: &Path) -> Result<StandardPathBuf> {
     Ok(path.with_encoding::<StandardEncoding>())
 }
 
-pub fn system_path_to_lstr<'lua>(lua: &'lua Lua, path: &Path) -> Result<LuaString<'lua>> {
+pub fn system_path_to_lstr(lua: &Lua, path: &Path) -> Result<LuaString> {
     let standard = system_path_to_path(path)?;
     lua.create_string(standard.as_str())
 }

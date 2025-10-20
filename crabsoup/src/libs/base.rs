@@ -6,14 +6,14 @@ use mlua::{
         LUA_TFUNCTION, LUA_TTABLE,
     },
     lua_State,
-    prelude::LuaString,
+    prelude::{LuaString, LuaTable},
     ChunkMode, Compiler, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods,
-    UserDataRef, Value,
+    UserDataRef,
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
-use std::borrow::Cow;
+use std::ops::Deref;
 
-pub fn create_base_table(lua: &Lua) -> Result<Table<'_>> {
+pub fn create_base_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     {
@@ -34,9 +34,9 @@ pub fn create_base_table(lua: &Lua) -> Result<Table<'_>> {
         "loadstring_rt",
         lua.create_function(|lua, (code, chunkname): (LuaString, LuaString)| {
             Ok(lua
-                .load(code.as_bytes())
+                .load(code.as_bytes().deref())
                 .set_mode(ChunkMode::Binary)
-                .set_name(chunkname.to_str()?)
+                .set_name(chunkname.to_str()?.deref())
                 .into_function()?)
         })?,
     )?;
@@ -44,20 +44,19 @@ pub fn create_base_table(lua: &Lua) -> Result<Table<'_>> {
     table.raw_set(
         "loadstring",
         lua.create_function(
-            |lua, (code, chunkname, env): (LuaString, Option<LuaString>, Option<Value>)| {
-                let mut chunk = lua.load(code.to_str()?);
+            |lua, (code, chunkname, env): (LuaString, Option<LuaString>, Option<LuaTable>)| {
+                let code = code.to_str()?;
+                let mut chunk = lua.load(code.deref());
                 if let Some(chunkname) = chunkname {
-                    chunk = chunk.set_name(chunkname.to_str()?);
+                    chunk = chunk.set_name(chunkname.to_str()?.deref());
                 } else {
-                    let code_name = code.to_str()?;
-                    let final_name = if code_name.chars().count() > 40 {
-                        let mut str: String = code_name.chars().take(40).collect();
+                    if code.chars().count() > 40 {
+                        let mut str: String = code.chars().take(40).collect();
                         str.push_str("...");
-                        Cow::Owned(str)
+                        chunk = chunk.set_name(&str);
                     } else {
-                        Cow::Borrowed(code_name)
+                        chunk = chunk.set_name(code.deref());
                     };
-                    chunk = chunk.set_name(final_name);
                 }
                 if let Some(env) = env {
                     chunk = chunk.set_environment(env);
@@ -114,7 +113,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table<'_>> {
                 .set_optimization_level(2)
                 .set_type_info_level(1)
                 .set_mutable_globals(mutable)
-                .compile(source.as_bytes());
+                .compile(source.as_bytes())?;
             Ok(CompiledChunk(data))
         })?,
     )?;
@@ -124,7 +123,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table<'_>> {
             Ok(lua
                 .load(chunk.0.as_slice())
                 .set_mode(ChunkMode::Binary)
-                .set_name(chunkname.to_str()?)
+                .set_name(chunkname.to_str()?.deref())
                 .into_function()?)
         })?,
     )?;
@@ -255,11 +254,11 @@ enum PluginInstruction {
     Exit(String),
 }
 impl UserData for PluginInstruction {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "PluginInstruction");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("get_message", |lua, this, ()| match this {
             PluginInstruction::Fail(msg) => Ok(lua.create_string(msg)),
             PluginInstruction::Exit(msg) => Ok(lua.create_string(msg)),
@@ -280,13 +279,13 @@ struct RustyLineEditor {
     editor: DefaultEditor,
 }
 impl UserData for RustyLineEditor {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "RustyLineEditor");
     }
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("readline", |_, this, prompt: LuaString| {
-            match this.editor.readline(prompt.to_str()?) {
+            match this.editor.readline(&prompt.to_str()?) {
                 Ok(line) => Ok(Some(line)),
                 Err(ReadlineError::Interrupted) => Ok(None),
                 Err(ReadlineError::Eof) => Ok(None),
@@ -296,7 +295,7 @@ impl UserData for RustyLineEditor {
 
         methods.add_method_mut("saveline", |_, this, line: LuaString| {
             this.editor
-                .add_history_entry(line.to_str()?)
+                .add_history_entry(line.to_str()?.deref())
                 .map_err(Error::runtime)?;
             Ok(())
         });
@@ -305,21 +304,21 @@ impl UserData for RustyLineEditor {
 
 struct OpaqueEnvironment(());
 impl UserData for OpaqueEnvironment {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "Environment");
     }
 }
 
 struct CompiledChunk(Vec<u8>);
 impl UserData for CompiledChunk {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "CompiledChunk");
     }
 }
 
 pub struct OpaqueKey(());
 impl UserData for OpaqueKey {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "OpaqueKey");
     }
 }
