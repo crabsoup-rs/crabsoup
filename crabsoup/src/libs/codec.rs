@@ -11,7 +11,7 @@ fn options() -> ser::Options {
     opts
 }
 
-fn create_json_table(lua: &Lua) -> Result<Table> {
+fn create_json_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set(
@@ -38,7 +38,7 @@ fn create_json_table(lua: &Lua) -> Result<Table> {
     Ok(table)
 }
 
-fn create_toml_table(lua: &Lua) -> Result<Table> {
+fn create_toml_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set(
@@ -56,7 +56,7 @@ fn create_toml_table(lua: &Lua) -> Result<Table> {
     Ok(table)
 }
 
-fn create_yaml_table(lua: &Lua) -> Result<Table> {
+fn create_yaml_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set(
@@ -77,7 +77,7 @@ fn create_yaml_table(lua: &Lua) -> Result<Table> {
     Ok(table)
 }
 
-fn create_csv_table(lua: &Lua) -> Result<Table> {
+fn create_csv_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set(
@@ -131,7 +131,7 @@ fn create_csv_table(lua: &Lua) -> Result<Table> {
     Ok(table)
 }
 
-pub fn create_codec_table(lua: &Lua) -> Result<Table> {
+pub fn create_codec_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
     table.raw_set("JSON", create_json_table(lua)?)?;
     table.raw_set("TOML", create_toml_table(lua)?)?;

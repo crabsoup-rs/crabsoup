@@ -1,6 +1,6 @@
 use mlua::{prelude::LuaString, Error, Lua, Result, Table};
 
-pub fn create_regex_table(lua: &Lua) -> Result<Table> {
+pub fn create_regex_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set(

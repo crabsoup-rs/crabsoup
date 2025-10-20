@@ -2,7 +2,7 @@ use mlua::{Lua, MultiValue, Result, Table, Value};
 use std::borrow::Cow;
 use tracing::{debug, enabled, error, info, trace, warn, Level};
 
-pub fn create_log_table(lua: &Lua) -> Result<Table> {
+pub fn create_log_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     fn target(lua: &Lua) -> Result<Cow<'static, str>> {

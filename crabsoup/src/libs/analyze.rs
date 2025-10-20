@@ -11,7 +11,7 @@ use mlua::{
 };
 use tracing::{enabled, Level};
 
-pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
+pub fn create_analyze_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set(

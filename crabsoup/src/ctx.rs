@@ -67,7 +67,7 @@ impl CrabsoupLuaContext {
         Ok(CrabsoupLuaContext { lua })
     }
 
-    pub fn run_standalone(&self, code: &str, chunk_name: Option<&str>) -> Result<Thread> {
+    pub fn run_standalone(&self, code: &str, chunk_name: Option<&str>) -> Result<Thread<'_>> {
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
         let thread = shared_table
             .get::<_, LuaFunction>("run_standalone")?

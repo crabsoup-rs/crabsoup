@@ -145,7 +145,7 @@ fn parse<'lua>(
     }
 }
 
-pub fn create_html_table(lua: &Lua) -> Result<Table> {
+pub fn create_html_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     let active_encoding = Rc::new(RefCell::new(UTF_8));

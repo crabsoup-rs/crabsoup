@@ -13,7 +13,7 @@ use mlua::{
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::borrow::Cow;
 
-pub fn create_base_table(lua: &Lua) -> Result<Table> {
+pub fn create_base_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     {

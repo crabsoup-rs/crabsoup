@@ -295,7 +295,7 @@ impl UserData for LuaCompletedProcess {
     }
 }
 
-pub fn create_process_table(lua: &Lua) -> Result<Table> {
+pub fn create_process_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     // Simple API

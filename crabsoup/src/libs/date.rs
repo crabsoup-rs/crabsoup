@@ -131,7 +131,7 @@ fn value_as_timezone(value: Value) -> Result<LuaTimezone> {
     }
 }
 
-fn create_tz_table(lua: &Lua) -> Result<Table> {
+fn create_tz_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     let new_mt = lua.create_table()?;
@@ -200,7 +200,7 @@ fn parse_input_format(date: &str, value: &Value, tz: LuaTimezone) -> Result<f64>
     }
 }
 
-pub fn create_date_table(lua: &Lua) -> Result<Table> {
+pub fn create_date_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set("Timezone", create_tz_table(lua)?)?;

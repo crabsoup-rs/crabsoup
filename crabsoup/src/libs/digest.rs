@@ -9,7 +9,7 @@ use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 use std::fmt::Write;
 
-fn digest_helper<D: Digest>(lua: &Lua) -> Result<LuaFunction> {
+fn digest_helper<D: Digest>(lua: &Lua) -> Result<LuaFunction<'_>> {
     Ok(lua.create_function(|_, input: LuaString| {
         let mut str = String::new();
         for byte in D::digest(input.as_bytes()).as_slice() {
@@ -19,7 +19,7 @@ fn digest_helper<D: Digest>(lua: &Lua) -> Result<LuaFunction> {
     })?)
 }
 
-pub fn create_digest_table(lua: &Lua) -> Result<Table> {
+pub fn create_digest_table(lua: &Lua) -> Result<Table<'_>> {
     let table = lua.create_table()?;
 
     table.raw_set("md5", digest_helper::<Md5>(lua)?)?;
