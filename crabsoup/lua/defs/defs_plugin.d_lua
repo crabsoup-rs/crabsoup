@@ -33,6 +33,7 @@ declare Sys: typeof(Sys) & {
 declare Table: typeof(Table) & {
     has_key: <K, V>(value: { [K]: V }, key: K) -> boolean,
     copy: <K, V>(value: { [K]: V }) -> { [K]: V },
+    sort: <T>(compare: (T, T) -> number, value: { T }) -> (),
 }
 declare TOML: typeof(TOML) & {
     unsafe_from_string: (string) -> any?,

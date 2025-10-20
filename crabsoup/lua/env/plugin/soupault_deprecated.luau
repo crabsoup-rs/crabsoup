@@ -37,7 +37,9 @@ end
 
 String.trim = string.trim
 
+-- TODO: String.to_integer
 String.to_number = tonumber
+String.to_float = tonumber
 
 function String.join(sep: string, list: { string }): string
     return table.concat(list, sep)
@@ -88,6 +90,12 @@ function Table.copy<K, V>(value: { [K]: V }): { [K]: V }
         new[k] = value[k]
     end
     return new
+end
+
+function Table.sort<T>(compare: (T, T) -> number, value: { T })
+    table.sort(value, function(a, b)
+        return compare(a, b) < 0
+    end)
 end
 
 -- Function definitions for 'Sys' module

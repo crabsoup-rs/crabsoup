@@ -50,6 +50,7 @@ do
         analyzer:set_deprecation("String.length_ascii", "#str")
         analyzer:set_deprecation("String.trim", "string.trim")
         analyzer:set_deprecation("String.to_number", "tonumber")
+        analyzer:set_deprecation("String.to_float", "tonumber")
         analyzer:set_deprecation("String.join", "table.concat")
         analyzer:set_deprecation("String.starts_with", "string.starts_with")
         analyzer:set_deprecation("String.ends_with", "string.ends_with")
@@ -73,6 +74,7 @@ do
         -- Table library
         analyzer:set_deprecation("Table.has_key", "table[x]")
         analyzer:set_deprecation("Table.copy", "table.clone")
+        analyzer:set_deprecation("Table.sort", "table.sort")
 
         -- TOML library
         analyzer:set_deprecation("TOML.unsafe_from_string", "pcall(TOML.from_string, x)")

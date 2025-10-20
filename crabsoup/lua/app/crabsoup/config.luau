@@ -19,7 +19,6 @@ type Schema = {
 local schema: Schema = {
     settings = {
         soupault_version = ty_string,
-        strict = ty_boolean,
         site_dir = ty_string,
         build_dir = ty_string,
         page_file_extensions = ty_string_list,
@@ -44,6 +43,7 @@ local schema: Schema = {
         debug = ty_boolean,
         caching = ty_boolean,
         cache_dir = ty_string,
+        strict = ty_boolean,
     },
     plugins = {
         __kind = "string_map",
@@ -64,6 +64,7 @@ local schema: Schema = {
             exclude_section = ty_string_list,
             exclude_path_regex = ty_string_list,
             include_subsections = ty_boolean,
+            -- TODO: Implement os_family
             __allow_unknown = true,
         },
     },
@@ -287,9 +288,13 @@ local function check_deprecations(config)
             Log.warn(`Preprocessor is defined for extension '.{k}', but it is not found in page_file_extensions.`)
         end
     end
+    if not config.settings.strict then
+        Log.warn("`settings.strict` option is deprecated: crabsoup does not support non-strict builds.")
+    end
 end
 
 local default_config = TOML.from_string(require("resources")["app/crabsoup/default_config.toml"])
+default_config.settings.strict = true -- deprecated option
 check_schema("", schema, default_config)
 
 local function freeze_recursive(tbl: any)

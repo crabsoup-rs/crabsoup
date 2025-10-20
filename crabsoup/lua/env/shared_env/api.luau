@@ -41,7 +41,7 @@ function Plugin.exit<T>(message: T): never
     return error("Coroutine resumed despite Plugin.exit?")
 end
 
-local supported_soupault_version = "4.10.0" -- Newest *compatible* version of Soupault.
+local supported_soupault_version = "5.0.0" -- Newest *compatible* version of Soupault.
 local crabsoup_version = shared.baselib.VERSION_ONLY
 
 function Plugin.require_version(version: string)
