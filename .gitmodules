@@ -1,6 +1,3 @@
-[submodule "kuchikiki"]
-	path = crabsoup-kuchikiki
-	url = https://github.com/Lymia/kuchikiki.git
 [submodule "crabsoup-mlua-analyze/luau"]
 	path = crabsoup-luau-sys/luau
 	url = https://github.com/luau-lang/luau.git

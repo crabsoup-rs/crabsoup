@@ -1,12 +1,12 @@
-use kuchikiki::NodeRef;
 use regex::Regex;
 use std::sync::LazyLock;
+use tsugiki::dom::NodeRef;
 
 pub fn strip_tags(node: &NodeRef) -> String {
     let mut accum = String::new();
     for node in node.inclusive_descendants() {
         if let Some(text) = node.as_text() {
-            accum.push_str(text.borrow().as_str());
+            accum.push_str(text.borrow().content.as_str());
         }
     }
     accum
@@ -20,7 +20,7 @@ pub fn inner_text(node: &NodeRef) -> String {
     for node in node.inclusive_descendants() {
         if let Some(text) = node.as_text() {
             let text = text.borrow();
-            let text = text.as_str();
+            let text = text.content.as_str();
 
             let processed = REGEX.replace_all(text, " ");
             let start_stripped = processed.trim_start();

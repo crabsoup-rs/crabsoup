@@ -1,6 +1,6 @@
 use anyhow::Result;
-use kuchikiki::NodeRef;
 use tidier::{Doc, FormatOptions, Indent, LineEnding};
+use tsugiki::dom::NodeRef;
 
 pub mod extract_text;
 pub mod is_document;

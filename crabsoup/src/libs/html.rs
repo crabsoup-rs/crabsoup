@@ -7,13 +7,14 @@ use crate::{
     wyhash::WyHashSet,
 };
 use encoding_rs::{Encoding, UTF_8};
-use html5ever::{namespace_url, ns, LocalName, QualName};
-use kuchikiki::{
-    parse_fragment, parse_html, traits::TendrilSink, ElementData, NodeDataRef, NodeRef, Selectors,
-};
 use mlua::{prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataRef};
 use std::{borrow::Cow, cell::RefCell, io::Cursor, ops::Deref, rc::Rc, str::Split};
 use tracing::warn;
+use tsugiki::{
+    dom::{ns, Attributes, ElementData, LocalName, NodeDataRef, NodeRef, QualName},
+    parse_document, parse_fragment,
+    select::SelectorSet,
+};
 
 fn qual_name(name: &str) -> QualName {
     QualName { prefix: None, ns: ns!(html), local: LocalName::from(name) }
@@ -136,9 +137,9 @@ fn parse<'lua>(
         encoding_warning(lua, encoding, false);
     }
     if (force_document || is_document(&text)) && !force_fragment {
-        Ok(LuaNodeRef(parse_html().one(&*text)))
+        Ok(LuaNodeRef(parse_document(&*text)))
     } else {
-        let fragment = parse_fragment(qual_name(fragment_root), vec![]).one(&*text);
+        let fragment = parse_fragment(&*text, qual_name(fragment_root), Attributes::default());
         let new_root = NodeRef::new_document();
         assert_eq!(fragment.children().count(), 1);
         for child in fragment.children().next().unwrap().children() {
@@ -305,7 +306,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "matches",
         lua.create_function(|_, (node, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
             let selector = selector.to_str()?;
-            let selectors = Selectors::compile(&selector).map_err(|()| {
+            let selectors = SelectorSet::compile(&selector).map_err(|()| {
                 Error::runtime(format_args!("Could not parse selector: {selector}"))
             })?;
             if let Some(elem) = node.0.clone().into_element_ref() {
@@ -385,13 +386,13 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "get_tag_name",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
-            Ok(element(&node.0)?.name.borrow().local.to_string())
+            Ok(element(&node.0)?.borrow().name.local.to_string())
         })?,
     )?;
     table.raw_set(
         "set_tag_name",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
-            element(&node.0)?.name.borrow_mut().local = LocalName::from(name.to_str()?.deref());
+            element(&node.0)?.borrow_mut().name.local = LocalName::from(name.to_str()?.deref());
             Ok(())
         })?,
     )?;
@@ -399,8 +400,8 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "get_attribute",
         lua.create_function(|lua, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             if let Some(attr) = element(&node.0)?
-                .attributes
                 .borrow()
+                .attributes
                 .get(name.to_str()?.deref())
             {
                 Ok(Some(lua.create_string(attr)?))
@@ -414,8 +415,8 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         lua.create_function(
             |_, (node, name, value): (UserDataRef<LuaNodeRef>, LuaString, LuaString)| {
                 element(&node.0)?
-                    .attributes
                     .borrow_mut()
+                    .attributes
                     .insert(name.to_str()?.deref(), value.to_string_lossy().to_string());
                 Ok(())
             },
@@ -425,8 +426,8 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "delete_attribute",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             element(&node.0)?
-                .attributes
                 .borrow_mut()
+                .attributes
                 .remove(name.to_str()?.deref());
             Ok(())
         })?,
@@ -435,7 +436,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "list_attributes",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             let table = lua.create_table()?;
-            for (attr, _) in element(&node.0)?.attributes.borrow().map.iter() {
+            for (attr, _) in element(&node.0)?.borrow().attributes.map.iter() {
                 table.raw_push(lua.create_string(attr.local.to_string())?)?;
             }
             Ok(table)
@@ -444,7 +445,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "clear_attributes",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
-            element(&node.0)?.attributes.borrow_mut().map.clear();
+            element(&node.0)?.borrow_mut().attributes.map.clear();
             Ok(())
         })?,
     )?;
@@ -452,7 +453,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "get_classes",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             let elem = element(&node.0)?;
-            let attrs = elem.attributes.borrow();
+            let attrs = &elem.borrow().attributes;
             let classes = attrs.get("class");
             if let Some(classes) = classes {
                 let table = lua.create_table()?;
@@ -469,7 +470,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "has_class",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             let elem = element(&node.0)?;
-            let attrs = elem.attributes.borrow();
+            let attrs = &elem.borrow().attributes;
             let classes = attrs.get("class");
             if let Some(classes) = classes {
                 let name = name.to_str()?;
@@ -484,7 +485,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "add_class",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             let elem = element(&node.0)?;
-            let mut attrs = elem.attributes.borrow_mut();
+            let attrs = &mut elem.borrow_mut().attributes;
             let classes = attrs.get("class");
             if let Some(classes) = classes {
                 let name = name.to_str()?;
@@ -505,7 +506,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "remove_class",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             let elem = element(&node.0)?;
-            let mut attrs = elem.attributes.borrow_mut();
+            let attrs = &mut elem.borrow_mut().attributes;
             let classes = attrs.get("class");
             if let Some(classes) = classes {
                 let name = name.to_str()?;

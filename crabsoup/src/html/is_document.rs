@@ -1,84 +1,101 @@
 use html5ever::{
-    interface::{ElementFlags, NodeOrText, QuirksMode, TreeSink},
+    interface::{ElemName, ElementFlags, NodeOrText, QuirksMode, TreeSink},
     tendril::{StrTendril, TendrilSink},
-    Attribute, ExpandedName, LocalName, Namespace, ParseOpts, QualName,
+    Attribute, LocalName, Namespace, ParseOpts, QualName,
 };
-use std::borrow::Cow;
+use std::{
+    borrow::Cow,
+    cell::{Cell, RefCell},
+};
 
 struct IsDocumentTreeSink {
-    handle_id: usize,
-    is_document: bool,
-    elements: Vec<Option<(Namespace, LocalName)>>,
+    handle_id: Cell<usize>,
+    is_document: Cell<bool>,
+    elements: RefCell<Vec<Option<(Namespace, LocalName)>>>,
 }
 impl Default for IsDocumentTreeSink {
     fn default() -> Self {
-        IsDocumentTreeSink { handle_id: 0, is_document: false, elements: vec![] }
+        IsDocumentTreeSink {
+            handle_id: 0.into(),
+            is_document: false.into(),
+            elements: RefCell::new(vec![]),
+        }
     }
 }
 
 impl IsDocumentTreeSink {
-    fn handle(&mut self) -> usize {
-        let id = self.handle_id;
-        self.handle_id += 1;
+    fn handle(&self) -> usize {
+        let id = self.handle_id.get();
+        self.handle_id.set(id + 1);
         id
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
+pub struct ExpandedName {
+    pub ns: Namespace,
+    pub local: LocalName,
+}
+impl ElemName for ExpandedName {
+    fn ns(&self) -> &Namespace {
+        &self.ns
+    }
+    fn local_name(&self) -> &LocalName {
+        &self.local
     }
 }
 
 impl TreeSink for IsDocumentTreeSink {
     type Handle = usize;
     type Output = bool;
+    type ElemName<'a> = ExpandedName;
 
     fn finish(self) -> Self::Output {
-        self.is_document
+        self.is_document.get()
     }
 
-    fn parse_error(&mut self, _: Cow<'static, str>) {}
+    fn parse_error(&self, _: Cow<'static, str>) {}
 
-    fn get_document(&mut self) -> Self::Handle {
+    fn get_document(&self) -> Self::Handle {
         usize::MAX
     }
 
-    fn elem_name<'a>(&'a self, h: &'a Self::Handle) -> ExpandedName<'a> {
-        let t = &self.elements[*h];
+    fn elem_name<'a>(&'a self, h: &'a Self::Handle) -> ExpandedName {
+        let t = &self.elements.borrow()[*h];
         let t = t.as_ref().unwrap();
-        ExpandedName { ns: &t.0, local: &t.1 }
+        ExpandedName { ns: t.0.clone(), local: t.1.clone() }
     }
 
-    fn create_element(
-        &mut self,
-        name: QualName,
-        _: Vec<Attribute>,
-        _: ElementFlags,
-    ) -> Self::Handle {
-        self.elements.push(Some((name.ns, name.local)));
+    fn create_element(&self, name: QualName, _: Vec<Attribute>, _: ElementFlags) -> Self::Handle {
+        self.elements.borrow_mut().push(Some((name.ns, name.local)));
         self.handle()
     }
 
-    fn create_comment(&mut self, _: StrTendril) -> Self::Handle {
-        self.elements.push(None);
+    fn create_comment(&self, _: StrTendril) -> Self::Handle {
+        self.elements.borrow_mut().push(None);
         self.handle()
     }
 
-    fn create_pi(&mut self, _: StrTendril, _: StrTendril) -> Self::Handle {
-        self.elements.push(None);
+    fn create_pi(&self, _: StrTendril, _: StrTendril) -> Self::Handle {
+        self.elements.borrow_mut().push(None);
         self.handle()
     }
 
-    fn append(&mut self, _: &Self::Handle, _: NodeOrText<Self::Handle>) {}
+    fn append(&self, _: &Self::Handle, _: NodeOrText<Self::Handle>) {}
 
     fn append_based_on_parent_node(
-        &mut self,
+        &self,
         _: &Self::Handle,
         _: &Self::Handle,
         _: NodeOrText<Self::Handle>,
     ) {
     }
 
-    fn append_doctype_to_document(&mut self, _: StrTendril, _: StrTendril, _: StrTendril) {
-        self.is_document = true;
+    fn append_doctype_to_document(&self, _: StrTendril, _: StrTendril, _: StrTendril) {
+        self.is_document.set(true);
     }
 
-    fn get_template_contents(&mut self, _: &Self::Handle) -> Self::Handle {
+    fn get_template_contents(&self, _: &Self::Handle) -> Self::Handle {
         todo!()
     }
 
@@ -86,15 +103,15 @@ impl TreeSink for IsDocumentTreeSink {
         x == y
     }
 
-    fn set_quirks_mode(&mut self, _: QuirksMode) {}
+    fn set_quirks_mode(&self, _: QuirksMode) {}
 
-    fn append_before_sibling(&mut self, _: &Self::Handle, _: NodeOrText<Self::Handle>) {}
+    fn append_before_sibling(&self, _: &Self::Handle, _: NodeOrText<Self::Handle>) {}
 
-    fn add_attrs_if_missing(&mut self, _: &Self::Handle, _: Vec<Attribute>) {}
+    fn add_attrs_if_missing(&self, _: &Self::Handle, _: Vec<Attribute>) {}
 
-    fn remove_from_parent(&mut self, _: &Self::Handle) {}
+    fn remove_from_parent(&self, _: &Self::Handle) {}
 
-    fn reparent_children(&mut self, _: &Self::Handle, _: &Self::Handle) {}
+    fn reparent_children(&self, _: &Self::Handle, _: &Self::Handle) {}
 }
 
 pub fn is_document(source: &str) -> bool {
