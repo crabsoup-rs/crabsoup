@@ -137,100 +137,120 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
 
 fn load_unsafe_functions(lua: &Lua, table: &Table) -> Result<()> {
     unsafe extern "C-unwind" fn load_in_new_thread(lua: *mut lua_State) -> i32 {
-        // signature: (loader, env) -> thread
-        luaL_checktype(lua, 1, LUA_TFUNCTION);
-        luaL_checktype(lua, 2, LUA_TTABLE);
-        assert_eq!(lua_gettop(lua), 2);
+        unsafe {
+            // signature: (loader, env) -> thread
+            luaL_checktype(lua, 1, LUA_TFUNCTION);
+            luaL_checktype(lua, 2, LUA_TTABLE);
+            assert_eq!(lua_gettop(lua), 2);
 
-        // Transfer all arguments to the main Lua thread.
-        let lua_main = lua_mainthread(lua);
-        let lua_thread = lua_newthread(lua_main);
-        if lua == lua_main {
-            lua_rotate(lua_main, -3, 1);
+            // Transfer all arguments to the main Lua thread.
+            let lua_main = lua_mainthread(lua);
+            let lua_thread = lua_newthread(lua_main);
+            if lua == lua_main {
+                lua_rotate(lua_main, -3, 1);
+            }
+            lua_xmove(lua, lua_thread, 2);
+
+            // Creates the new thread
+            lua_replace(lua_thread, LUA_GLOBALSINDEX);
+            luaL_sandboxthread(lua_thread);
+            // (loader function is left on stack here)
+
+            // Pushes the newly created thread to the `lua` thread
+            if lua != lua_main {
+                lua_xmove(lua_main, lua, 1);
+            }
+            1
         }
-        lua_xmove(lua, lua_thread, 2);
-
-        // Creates the new thread
-        lua_replace(lua_thread, LUA_GLOBALSINDEX);
-        luaL_sandboxthread(lua_thread);
-        // (loader function is left on stack here)
-
-        // Pushes the newly created thread to the `lua` thread
-        if lua != lua_main {
-            lua_xmove(lua_main, lua, 1);
-        }
-        1
     }
 
     unsafe extern "C-unwind" fn set_safeenv_flag(lua: *mut lua_State) -> i32 {
-        // signature: (env)
-        luaL_checktype(lua, 1, LUA_TTABLE);
-        lua_setsafeenv(lua, 1, 1);
-        0
-    }
-
-    unsafe extern "C-unwind" fn deoptimize_env(lua: *mut lua_State) -> i32 {
-        // signature: (env)
-        luaL_checktype(lua, 1, LUA_TTABLE);
-        lua_setsafeenv(lua, 1, 0);
-        0
-    }
-
-    unsafe extern "C-unwind" fn get_globals(lua: *mut lua_State) -> i32 {
-        lua_pushglobaltable(lua);
-        1
-    }
-
-    unsafe extern "C-unwind" fn set_globals(lua: *mut lua_State) -> i32 {
-        // signature: (env)
-        luaL_checktype(lua, 1, LUA_TTABLE);
-        lua_replace(lua, LUA_GLOBALSINDEX);
-        0
-    }
-
-    unsafe extern "C-unwind" fn raw_getfenv(lua: *mut lua_State) -> i32 {
-        // signature: (function) -> env
-        luaL_checktype(lua, 1, LUA_TFUNCTION);
-        lua_getfenv(lua, 1);
-        1
-    }
-
-    unsafe extern "C-unwind" fn raw_setfenv(lua: *mut lua_State) -> i32 {
-        // signature: (function, env)
-        luaL_checktype(lua, 1, LUA_TFUNCTION);
-        luaL_checktype(lua, 2, LUA_TTABLE);
-        lua_setfenv(lua, 1);
-        0
-    }
-
-    unsafe extern "C-unwind" fn do_sandbox(lua: *mut lua_State) -> i32 {
-        luaL_sandbox(lua, 1);
-        0
-    }
-
-    unsafe extern "C-unwind" fn raw_getmetatable(lua: *mut lua_State) -> i32 {
-        // signature: (target) -> metatable
-        if lua_gettop(lua) != 1 {
-            panic!("wrong number of arguments");
-        }
-        if lua_getmetatable(lua, 1) != 0 {
-            1
-        } else {
+        unsafe {
+            // signature: (env)
+            luaL_checktype(lua, 1, LUA_TTABLE);
+            lua_setsafeenv(lua, 1, 1);
             0
         }
     }
-    unsafe extern "C-unwind" fn raw_setmetatable(lua: *mut lua_State) -> i32 {
-        // signature: (target, metatable)
-        let top = lua_gettop(lua);
-        if top == 1 {
-            lua_pushnil(lua);
-        } else if top == 2 {
-            // do nothing
-        } else {
-            panic!("wrong number of arguments");
+
+    unsafe extern "C-unwind" fn deoptimize_env(lua: *mut lua_State) -> i32 {
+        unsafe {
+            // signature: (env)
+            luaL_checktype(lua, 1, LUA_TTABLE);
+            lua_setsafeenv(lua, 1, 0);
+            0
         }
-        lua_setmetatable(lua, 1);
-        1
+    }
+
+    unsafe extern "C-unwind" fn get_globals(lua: *mut lua_State) -> i32 {
+        unsafe {
+            lua_pushglobaltable(lua);
+            1
+        }
+    }
+
+    unsafe extern "C-unwind" fn set_globals(lua: *mut lua_State) -> i32 {
+        unsafe {
+            // signature: (env)
+            luaL_checktype(lua, 1, LUA_TTABLE);
+            lua_replace(lua, LUA_GLOBALSINDEX);
+            0
+        }
+    }
+
+    unsafe extern "C-unwind" fn raw_getfenv(lua: *mut lua_State) -> i32 {
+        unsafe {
+            // signature: (function) -> env
+            luaL_checktype(lua, 1, LUA_TFUNCTION);
+            lua_getfenv(lua, 1);
+            1
+        }
+    }
+
+    unsafe extern "C-unwind" fn raw_setfenv(lua: *mut lua_State) -> i32 {
+        unsafe {
+            // signature: (function, env)
+            luaL_checktype(lua, 1, LUA_TFUNCTION);
+            luaL_checktype(lua, 2, LUA_TTABLE);
+            lua_setfenv(lua, 1);
+            0
+        }
+    }
+
+    unsafe extern "C-unwind" fn do_sandbox(lua: *mut lua_State) -> i32 {
+        unsafe {
+            luaL_sandbox(lua, 1);
+            0
+        }
+    }
+
+    unsafe extern "C-unwind" fn raw_getmetatable(lua: *mut lua_State) -> i32 {
+        unsafe {
+            // signature: (target) -> metatable
+            if lua_gettop(lua) != 1 {
+                panic!("wrong number of arguments");
+            }
+            if lua_getmetatable(lua, 1) != 0 {
+                1
+            } else {
+                0
+            }
+        }
+    }
+    unsafe extern "C-unwind" fn raw_setmetatable(lua: *mut lua_State) -> i32 {
+        unsafe {
+            // signature: (target, metatable)
+            let top = lua_gettop(lua);
+            if top == 1 {
+                lua_pushnil(lua);
+            } else if top == 2 {
+                // do nothing
+            } else {
+                panic!("wrong number of arguments");
+            }
+            lua_setmetatable(lua, 1);
+            1
+        }
     }
 
     unsafe {
