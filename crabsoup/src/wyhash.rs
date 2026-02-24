@@ -1,10 +1,8 @@
 // we don't need a secret, and generating a secret involves primality checks. oww.
 // thus, new_with_default_secret
 
-use std::{
-    collections::{HashMap, HashSet},
-    hash::BuildHasher,
-};
+use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasher;
 use wyrand::WyHash;
 
 #[derive(Copy, Clone, Debug, Default)]

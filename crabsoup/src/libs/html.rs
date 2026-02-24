@@ -1,20 +1,20 @@
-use crate::{
-    html::{
-        clone_node,
-        extract_text::{inner_text, strip_tags},
-        is_document::is_document,
-    },
-    wyhash::WyHashSet,
-};
+use crate::html::clone_node;
+use crate::html::extract_text::{inner_text, strip_tags};
+use crate::html::is_document::is_document;
+use crate::wyhash::WyHashSet;
 use encoding_rs::{Encoding, UTF_8};
-use mlua::{prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataRef};
-use std::{borrow::Cow, cell::RefCell, io::Cursor, ops::Deref, rc::Rc, str::Split};
+use mlua::prelude::LuaString;
+use mlua::{Error, Lua, Result, Table, UserData, UserDataFields, UserDataRef};
+use std::borrow::Cow;
+use std::cell::RefCell;
+use std::io::Cursor;
+use std::ops::Deref;
+use std::rc::Rc;
+use std::str::Split;
 use tracing::warn;
-use tsugiki::{
-    dom::{ns, Attributes, ElementData, LocalName, NodeDataRef, NodeRef, QualName},
-    parse_document, parse_fragment,
-    select::SelectorSet,
-};
+use tsugiki::dom::{ns, Attributes, ElementData, LocalName, NodeDataRef, NodeRef, QualName};
+use tsugiki::select::SelectorSet;
+use tsugiki::{parse_document, parse_fragment};
 
 fn qual_name(name: &str) -> QualName {
     QualName { prefix: None, ns: ns!(html), local: LocalName::from(name) }

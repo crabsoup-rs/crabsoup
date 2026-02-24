@@ -3,13 +3,10 @@ use chrono::{
     TimeZone, Utc,
 };
 use chrono_tz::{Tz, TZ_VARIANTS};
-use mlua::{
-    prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, Value,
-};
-use std::{
-    borrow::Cow,
-    fmt::{Display, Formatter},
-};
+use mlua::prelude::LuaString;
+use mlua::{Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, Value};
+use std::borrow::Cow;
+use std::fmt::{Display, Formatter};
 
 const MICROS: f64 = 1000000.0;
 

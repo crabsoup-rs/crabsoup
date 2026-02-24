@@ -1,16 +1,16 @@
-use mlua::{
-    ffi::{
-        luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_getmetatable,
-        lua_gettop, lua_mainthread, lua_newthread, lua_pushglobaltable, lua_pushnil, lua_replace,
-        lua_rotate, lua_setfenv, lua_setmetatable, lua_setsafeenv, lua_xmove, LUA_GLOBALSINDEX,
-        LUA_TFUNCTION, LUA_TTABLE,
-    },
-    lua_State,
-    prelude::{LuaString, LuaTable},
-    ChunkMode, Compiler, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods,
-    UserDataRef,
+use mlua::ffi::{
+    luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_getmetatable, lua_gettop,
+    lua_mainthread, lua_newthread, lua_pushglobaltable, lua_pushnil, lua_replace, lua_rotate,
+    lua_setfenv, lua_setmetatable, lua_setsafeenv, lua_xmove, LUA_GLOBALSINDEX, LUA_TFUNCTION,
+    LUA_TTABLE,
 };
-use rustyline::{error::ReadlineError, DefaultEditor};
+use mlua::prelude::{LuaString, LuaTable};
+use mlua::{
+    lua_State, ChunkMode, Compiler, Error, Lua, Result, Table, UserData, UserDataFields,
+    UserDataMethods, UserDataRef,
+};
+use rustyline::error::ReadlineError;
+use rustyline::DefaultEditor;
 use std::ops::Deref;
 
 pub fn create_base_table(lua: &Lua) -> Result<Table> {

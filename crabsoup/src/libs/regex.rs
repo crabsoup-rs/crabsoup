@@ -1,4 +1,5 @@
-use mlua::{prelude::LuaString, Error, Lua, Result, Table};
+use mlua::prelude::LuaString;
+use mlua::{Error, Lua, Result, Table};
 use std::ops::Deref;
 
 pub fn create_regex_table(lua: &Lua) -> Result<Table> {

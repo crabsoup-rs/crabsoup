@@ -1,14 +1,10 @@
-use codespan_reporting::{
-    diagnostic::{Diagnostic, Label},
-    files::{Files, SimpleFiles},
-    term,
-    term::termcolor::{ColorChoice, StandardStream},
-};
+use codespan_reporting::diagnostic::{Diagnostic, Label};
+use codespan_reporting::files::{Files, SimpleFiles};
+use codespan_reporting::term;
+use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use crabsoup_mlua_analyze::{LuaAnalyzer, LuaAnalyzerBuilder};
-use mlua::{
-    prelude::{LuaFunction, LuaString},
-    Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, UserDataRef,
-};
+use mlua::prelude::{LuaFunction, LuaString};
+use mlua::{Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, UserDataRef};
 use tracing::{enabled, Level};
 
 pub fn create_analyze_table(lua: &Lua) -> Result<Table> {

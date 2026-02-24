@@ -1,4 +1,5 @@
-use std::{fs, path::Path};
+use std::fs;
+use std::path::Path;
 
 fn main() {
     let source_dir_base = Path::new(env!("CARGO_MANIFEST_DIR"));

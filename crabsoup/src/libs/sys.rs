@@ -1,10 +1,9 @@
 use crate::paths::{basename, dirname, lstr_to_path, lstr_to_system_path, system_path_to_lstr};
-use mlua::{prelude::LuaString, Error, Lua, Result, Table, Value};
-use std::{
-    ops::Deref,
-    path::Path,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use mlua::prelude::LuaString;
+use mlua::{Error, Lua, Result, Table, Value};
+use std::ops::Deref;
+use std::path::Path;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use typed_path::Utf8UnixComponent;
 
 const MICROS: f64 = 1000000.0;

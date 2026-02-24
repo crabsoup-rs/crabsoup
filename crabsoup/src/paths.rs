@@ -1,8 +1,7 @@
-use mlua::{prelude::LuaString, BorrowedStr, Error, Lua, Result};
-use std::{
-    ops::Deref,
-    path::{Path, PathBuf},
-};
+use mlua::prelude::LuaString;
+use mlua::{BorrowedStr, Error, Lua, Result};
+use std::ops::Deref;
+use std::path::{Path, PathBuf};
 use typed_path::{
     NativePath, Utf8NativeEncoding, Utf8NativePath, Utf8UnixEncoding, Utf8UnixPath, Utf8UnixPathBuf,
 };

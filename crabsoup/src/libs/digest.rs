@@ -1,13 +1,12 @@
 use blake2::{Blake2b512, Blake2s256};
 use digest::Digest;
 use md5::Md5;
-use mlua::{
-    prelude::{LuaFunction, LuaString},
-    Lua, Result, Table,
-};
+use mlua::prelude::{LuaFunction, LuaString};
+use mlua::{Lua, Result, Table};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
-use std::{fmt::Write, ops::Deref};
+use std::fmt::Write;
+use std::ops::Deref;
 
 fn digest_helper<D: Digest>(lua: &Lua) -> Result<LuaFunction> {
     Ok(lua.create_function(|_, input: LuaString| {

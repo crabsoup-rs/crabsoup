@@ -1,18 +1,12 @@
-use mlua::{
-    prelude::{LuaString, LuaUserDataRef, LuaUserDataRefMut},
-    Error, Lua, Result, Table, UserData, UserDataFields,
-};
-use std::{
-    ops::{Deref, DerefMut},
-    process::{ExitStatus, Stdio},
-    sync::{Arc, LazyLock, Mutex},
-};
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    process::{Child, Command},
-    runtime::{Builder, Runtime},
-    task::JoinHandle,
-};
+use mlua::prelude::{LuaString, LuaUserDataRef, LuaUserDataRefMut};
+use mlua::{Error, Lua, Result, Table, UserData, UserDataFields};
+use std::ops::{Deref, DerefMut};
+use std::process::{ExitStatus, Stdio};
+use std::sync::{Arc, LazyLock, Mutex};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::process::{Child, Command};
+use tokio::runtime::{Builder, Runtime};
+use tokio::task::JoinHandle;
 
 static ASYNC_EXECUTOR: LazyLock<Runtime> = LazyLock::new(|| {
     Builder::new_multi_thread()

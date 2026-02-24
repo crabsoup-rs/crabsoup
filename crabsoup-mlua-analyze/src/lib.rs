@@ -1,9 +1,7 @@
 extern crate crabsoup_luau_sys;
 
-use std::{
-    ffi::{c_char, c_uint, c_void},
-    mem,
-};
+use std::ffi::{c_char, c_uint, c_void};
+use std::mem;
 
 #[repr(C)]
 struct RustString {

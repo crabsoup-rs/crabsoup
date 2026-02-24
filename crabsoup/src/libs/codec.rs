@@ -1,5 +1,7 @@
 use csv::ReaderBuilder;
-use mlua::{prelude::LuaString, serde::ser, Error, Lua, LuaSerdeExt, Result, Table, Value};
+use mlua::prelude::LuaString;
+use mlua::serde::ser;
+use mlua::{Error, Lua, LuaSerdeExt, Result, Table, Value};
 use std::io::Cursor;
 
 fn options() -> ser::Options {

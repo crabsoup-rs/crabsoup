@@ -1,12 +1,8 @@
-use html5ever::{
-    interface::{ElemName, ElementFlags, NodeOrText, QuirksMode, TreeSink},
-    tendril::{StrTendril, TendrilSink},
-    Attribute, LocalName, Namespace, ParseOpts, QualName,
-};
-use std::{
-    borrow::Cow,
-    cell::{Cell, RefCell},
-};
+use html5ever::interface::{ElemName, ElementFlags, NodeOrText, QuirksMode, TreeSink};
+use html5ever::tendril::{StrTendril, TendrilSink};
+use html5ever::{Attribute, LocalName, Namespace, ParseOpts, QualName};
+use std::borrow::Cow;
+use std::cell::{Cell, RefCell};
 
 struct IsDocumentTreeSink {
     handle_id: Cell<usize>,

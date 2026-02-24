@@ -1,8 +1,8 @@
 use crate::libs::{analyze, base, codec, date, digest, html, log, process, regex, string, sys};
-use mlua::{
-    ffi::luau_setfflag, prelude::LuaFunction, serde::ser, ChunkMode, Lua, LuaOptions, LuaSerdeExt,
-    Result, StdLib, Table, Thread,
-};
+use mlua::ffi::luau_setfflag;
+use mlua::prelude::LuaFunction;
+use mlua::serde::ser;
+use mlua::{ChunkMode, Lua, LuaOptions, LuaSerdeExt, Result, StdLib, Table, Thread};
 use serde::Serialize;
 use std::sync::OnceLock;
 

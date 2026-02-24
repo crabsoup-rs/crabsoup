@@ -1,6 +1,7 @@
 use anyhow::Result;
 use crabsoup_mlua_analyze::LuaAnalyzerBuilder;
-use mlua::{ffi::luau_setfflag, Compiler};
+use mlua::ffi::luau_setfflag;
+use mlua::Compiler;
 use std::path::PathBuf;
 
 fn compile_script(input: &[u8], has_require: bool) -> Vec<u8> {

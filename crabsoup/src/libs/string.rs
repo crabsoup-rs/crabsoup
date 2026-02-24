@@ -1,9 +1,11 @@
 use crate::wyhash::WyHashSet;
 use base64::Engine;
 use minijinja::Environment;
-use mlua::{prelude::LuaString, Error, Lua, Result, Table, Value};
+use mlua::prelude::LuaString;
+use mlua::{Error, Lua, Result, Table, Value};
 use regex::Regex;
-use std::{ops::Deref, sync::LazyLock};
+use std::ops::Deref;
+use std::sync::LazyLock;
 
 pub fn create_string_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
