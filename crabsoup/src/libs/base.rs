@@ -1,16 +1,16 @@
 use mlua::ffi::{
-    luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_getmetatable, lua_gettop,
+    LUA_GLOBALSINDEX, LUA_TFUNCTION, LUA_TTABLE, lua_getfenv, lua_getmetatable, lua_gettop,
     lua_mainthread, lua_newthread, lua_pushglobaltable, lua_pushnil, lua_replace, lua_rotate,
-    lua_setfenv, lua_setmetatable, lua_setsafeenv, lua_xmove, LUA_GLOBALSINDEX, LUA_TFUNCTION,
-    LUA_TTABLE,
+    lua_setfenv, lua_setmetatable, lua_setsafeenv, lua_xmove, luaL_checktype, luaL_sandbox,
+    luaL_sandboxthread,
 };
 use mlua::prelude::{LuaString, LuaTable};
 use mlua::{
-    lua_State, ChunkMode, Compiler, Error, Lua, Result, Table, UserData, UserDataFields,
-    UserDataMethods, UserDataRef,
+    ChunkMode, Compiler, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods,
+    UserDataRef, lua_State,
 };
-use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
+use rustyline::error::ReadlineError;
 use std::ops::Deref;
 
 pub fn create_base_table(lua: &Lua) -> Result<Table> {
@@ -230,11 +230,7 @@ fn load_unsafe_functions(lua: &Lua, table: &Table) -> Result<()> {
             if lua_gettop(lua) != 1 {
                 panic!("wrong number of arguments");
             }
-            if lua_getmetatable(lua, 1) != 0 {
-                1
-            } else {
-                0
-            }
+            if lua_getmetatable(lua, 1) != 0 { 1 } else { 0 }
         }
     }
     unsafe extern "C-unwind" fn raw_setmetatable(lua: *mut lua_State) -> i32 {

@@ -12,7 +12,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 use std::str::Split;
 use tracing::warn;
-use tsugiki::dom::{ns, Attributes, ElementData, LocalName, NodeDataRef, NodeRef, QualName};
+use tsugiki::dom::{Attributes, ElementData, LocalName, NodeDataRef, NodeRef, QualName, ns};
 use tsugiki::select::SelectorSet;
 use tsugiki::{parse_document, parse_fragment};
 
@@ -652,30 +652,30 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "is_comment",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
-            Ok(elem.0 .0.as_comment().is_some())
+            Ok(elem.0.0.as_comment().is_some())
         })?,
     )?;
     table.raw_set(
         "is_doctype",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
-            Ok(elem.0 .0.as_doctype().is_some())
+            Ok(elem.0.0.as_doctype().is_some())
         })?,
     )?;
     table.raw_set(
         "is_document",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
-            Ok(elem.0 .0.as_document().is_some())
+            Ok(elem.0.0.as_document().is_some())
         })?,
     )?;
     table.raw_set(
         "is_element",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
-            Ok(elem.0 .0.as_element().is_some())
+            Ok(elem.0.0.as_element().is_some())
         })?,
     )?;
     table.raw_set(
         "is_text",
-        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| Ok(elem.0 .0.as_text().is_some()))?,
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| Ok(elem.0.0.as_text().is_some()))?,
     )?;
 
     // Undocumented functions unknown to type checking.

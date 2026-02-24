@@ -1,6 +1,6 @@
 use mlua::{Lua, MultiValue, Result, Table, Value};
 use std::borrow::Cow;
-use tracing::{debug, enabled, error, info, trace, warn, Level};
+use tracing::{Level, debug, enabled, error, info, trace, warn};
 
 pub fn create_log_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;

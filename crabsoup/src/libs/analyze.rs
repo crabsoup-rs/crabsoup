@@ -5,7 +5,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use crabsoup_mlua_analyze::{LuaAnalyzer, LuaAnalyzerBuilder};
 use mlua::prelude::{LuaFunction, LuaString};
 use mlua::{Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, UserDataRef};
-use tracing::{enabled, Level};
+use tracing::{Level, enabled};
 
 pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;

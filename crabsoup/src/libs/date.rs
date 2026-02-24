@@ -2,7 +2,7 @@ use chrono::{
     DateTime, FixedOffset, Local, MappedLocalTime, NaiveDate, NaiveDateTime, NaiveTime, Offset,
     TimeZone, Utc,
 };
-use chrono_tz::{Tz, TZ_VARIANTS};
+use chrono_tz::{TZ_VARIANTS, Tz};
 use mlua::prelude::LuaString;
 use mlua::{Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, Value};
 use std::borrow::Cow;
