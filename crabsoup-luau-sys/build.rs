@@ -7,7 +7,6 @@ fn main() {
     let common_dir = source_dir_base.join("luau").join("Common");
     let compiler_dir = source_dir_base.join("luau").join("Compiler");
     let config_dir = source_dir_base.join("luau").join("Config");
-    let eqsat_dir = source_dir_base.join("luau").join("EqSat");
     let vm_dir = source_dir_base.join("luau").join("VM");
 
     cc::Build::new()
@@ -19,13 +18,11 @@ fn main() {
         .define("LUACODEGEN_API", "extern \"C\"")
         .add_files_by_ext(&analysis_dir.join("src"), "cpp")
         .add_files_by_ext(&config_dir.join("src"), "cpp")
-        .add_files_by_ext(&eqsat_dir.join("src"), "cpp")
         .include(&analysis_dir.join("include"))
         .include(&ast_dir.join("include"))
         .include(&common_dir.join("include"))
         .include(&compiler_dir.join("include"))
         .include(&config_dir.join("include"))
-        .include(&eqsat_dir.join("include"))
         .include(&vm_dir.join("include"))
         .compile("luauanalysis");
     println!("cargo:rerun-if-changed=luau");
